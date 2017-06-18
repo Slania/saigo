@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <title>Learning Go</title>
+
+  <body>
+
+    {{if .LastSignup}}
+    <h1>Thank you for signing up, {{ .LastSignup }}</h1>
+    {{end}}
+
+    <br/>
+    <table style="width:100%">
+      <caption>Signed up users</caption>
+      <tr>
+        <th>Username</th>
+        <th>#</th>
+      </tr>
+      {{range $key, $value := .UserDirectory}}
+      <tr>
+        <td>{{$key}}</td>
+        <td>{{$value}}</td>
+        {{end}}
+      </tr>
+    </table>
+    <form action="/signup" method="POST">
+      <input type="text" name="username" placeholder="Enter Name">
+      <input type="submit" value="Sign-Up"/>
+    </form>
+  </body>
+</html>
