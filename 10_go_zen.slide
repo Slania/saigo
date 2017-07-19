@@ -1,0 +1,127 @@
+10 Distilled Golang Observations
+Tags: Golang, Zen, Observations
+
+Sri
+Fledling Gopher
+Age 4
+
+* #1: Simplicity and Readability over Performance
+
+Go loves simplicity and readability over all else, even performance
+
+- Go reads like a Haiku: Short, Crisp lines with long files
+  func doesThings(a []int) ... {
+    squares := make([]int, 0)
+    for _, i := range a {
+      squares = append(squares, i*i)
+    }
+
+    var sum int
+    for _, i := range squares {
+      sum = sum + i
+    }
+
+    //... 200 lines
+
+    return &sum // The most innocuous things are also the most powerful readability tools
+  }
+
+vs.
+
+  a.map { |i| i*i }.reduce(&:+).chain...
+
+* #2: Interfaces are not mandatory
+
+- In fact they happen to be quite hard to extract
+- If you have 2 implementations of your interface, a concerete one and a mock, you're doing it wrong
+- Many industry leaders claim to extract an interface after a few implementations and iterations, not write it up front
+- _"The_purpose_of_abstraction_is_not_to_be_vague,_but_to_create_a_new_semantic_level_in_which_one_can_be_absolutely_precise."_
+.caption _Zen_ by [[https://www.computer.org/web/awards/goode-edsger-dijkstra][Edsger W. Djikstra]]
+
+* #3: Package management is an art form
+
+- Package management == organization == grokability ~= architecture
+- Packages seem like a good idea for a couple of things
+  1. Exported interfaces
+  2. Multiple implementations of an internal interface
+- _"Package_management_is_like_modern_art_-_too_many_abstractions_and_even_you_won't_understand_it."_
+.caption _Zen_ by _Anonymous_
+
+* #4: The stack is free
+
+- Golang stacks grow downward for a reason
+- Passing parameters to a function is essentially free
+- Don't optimize ahead of the compiler by "sharing" pointers
+
+* #5: func(w *Worker) or func(w Worker)?
+
+- Wrong question
+- Better question - what semantics do I want? Value or Pointer?
+- What do I want to share and why do I want to share it?
+- Don't mix and drive:
+
+  type Worker struct {
+    myFoo int
+  }
+
+  func (w *Worker) ... { // }
+  func (w Worker) ... {
+    // unless this code is decoding/unmarshaling
+  }
+
+* #6: You need functions more than you need methods
+
+- GIGO functions are adequate and are rather easy to test too
+- It has a nice side benefit of keeping the surface area of data available smaller:
+
+  type SSN struct {
+    ssn string
+    isReused bool
+  }
+  func(ssn SSN) mask() (string, error) {
+    // unnecessary access to isReused value
+  }
+  ssn := SSN{ssn: '123-45-6789', isRotated: false}
+  ssn.mask()
+
+vs.
+
+  type SSN struct { Mask func(ssn string) (string, error) ... }
+  func maskSSN(ssn string) (string, error) {
+    // simple data transformation function, access only to given params
+  }
+  ssn := SSN{ssn: '123-45-6789', isRotated: false, Mask: maskSSN}
+  ssn.Mask('123-45-6789')
+
+* #7: There is a slice/map for that
+
+- Keep data structures simple
+- Rethink the need for that linked-list or circular queue you're writing
+- Structures like slices have mechanical sympathy and you'll be rewarded without realizing it
+
+* #8: interface{}
+
+- Aka the plague
+- Avoid except at application edges - typically I/O boundaries and serialization
+
+* #9: Concurrency is not Parallelism
+
+- There is always cost to concurrency
+- GoRoutines maybe cheap, but complexity is most certainly not and neither are the downstream resources
+- Channels are easy, cheap and fast; they also cause deadlocks
+
+  func main() {
+    ch := make(chan bool)
+    ch <- true
+    go func(c chan bool) {
+      <- c
+    }(ch)
+  }
+
+* #10: Design, design, design. Design?
+
+- Development happens in cycles and takes time - don’t touch the keyboard until you have a near-RFC like document at least in your head
+- There is no substitute for poor design and no language will punish you for that like go
+- There is no mainstay like good design and no language will reward you for that like go
+- _"Nothing_is_free_and_so_nothing_is_right_and_nothing_is_wrong._There_are_just_things_you’re_willing_to_give_up,_things_you_aren’t_and_things_you_don’t_realize."_
+.caption _Zen_ by _Anonymous_
